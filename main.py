@@ -10,7 +10,7 @@ class ContainerIp(NamedTuple):
     ip: str
 
 
-def _map_container() -> List[ContainerIp]:
+def _map_container(docker_containers: Iterator[Container]) -> List[ContainerIp]:
     ret: List[ContainerIp] = []
     ip: str
     for container in docker_containers:
@@ -23,9 +23,13 @@ def _map_container() -> List[ContainerIp]:
     return ret
 
 
-if __name__ == '__main__':
+def _get_containers() -> List[ContainerIp]:
     client: DockerClient = docker.from_env()
     docker_containers: Iterator[Container] = client.containers.list(filters={'status': 'running'})
     docker_containers = filter(lambda c: '80/tcp' in c.ports, docker_containers)
-    containers = _map_container()
+    return _map_container(docker_containers)
+
+
+if __name__ == '__main__':
+    containers = _get_containers()
     print(containers)
