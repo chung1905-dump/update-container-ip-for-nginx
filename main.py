@@ -1,26 +1,15 @@
+from typing import Iterator
+
 import docker
 from docker import DockerClient
 from docker.models.containers import Container
-from typing import Optional, Iterator
-
-
-def filter_http_container(c: Container) -> bool:
-    for i in c.ports:
-        ports: Optional[list] = c.ports.get(i)
-        if ports is None:
-            continue
-        if i == '80/tcp':
-            print(ports)
-            return True
-    return False
-
 
 if __name__ == '__main__':
     client: DockerClient = docker.from_env()
     containers: Iterator[Container] = client.containers.list(filters={'status': 'running'})
-    containers = filter(filter_http_container, containers)
+    containers = filter(lambda c: '80/tcp' in c.ports, containers)
     for container in containers:
         networks: dict = container.attrs.get('NetworkSettings', {}).get('Networks', {})
         for network_name in networks:
             print(network_name)
-            print(networks.get(network_name, {}).get('IPAddress'), {})
+            print(networks.get(network_name, {}).get('IPAddress', {}))
