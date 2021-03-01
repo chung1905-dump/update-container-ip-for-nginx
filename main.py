@@ -9,17 +9,18 @@ def filter_http_container(c: Container) -> bool:
         ports: Optional[list] = c.ports.get(i)
         if ports is None:
             continue
-        if int(ports.pop().get('HostPort')) == 80:
+        if i == '80/tcp':
+            print(ports)
             return True
     return False
 
 
 if __name__ == '__main__':
     client: DockerClient = docker.from_env()
-    containers: Iterator[Container] = client.containers.list()
+    containers: Iterator[Container] = client.containers.list(filters={'status': 'running'})
     containers = filter(filter_http_container, containers)
     for container in containers:
-        networks: dict = container.attrs.get('NetworkSettings').get('Networks')
+        networks: dict = container.attrs.get('NetworkSettings', {}).get('Networks', {})
         for network_name in networks:
             print(network_name)
-            print(networks.get(network_name).get('IPAddress'))
+            print(networks.get(network_name, {}).get('IPAddress'), {})
